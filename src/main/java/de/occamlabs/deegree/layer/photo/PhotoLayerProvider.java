@@ -109,7 +109,7 @@ public class PhotoLayerProvider implements LayerStoreProvider {
                             throws ResourceInitException, URISyntaxException {
         String dir = cfg.getDirectory().getValue();
         boolean recursive = cfg.getDirectory().isRecursive();
-        int size = cfg.getImageSize();
+        int size = cfg.getImageSize() == null ? 32 : cfg.getImageSize();
         File dirFile = new File( configUrl.toURI().resolve( dir ) );
         File h2File = new File( dirFile, ".h2-index" );
 
