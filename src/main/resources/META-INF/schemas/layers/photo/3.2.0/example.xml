@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PhotoLayers xmlns="http://www.occamlabs.de/deegree/layers/photo" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.occamlabs.de/deegree/layers/photo photo.xsd" configVersion="3.2.0"
+  xmlns:l="http://www.deegree.org/layers/base" xmlns:d="http://www.deegree.org/metadata/description" xmlns:s="http://www.deegree.org/metadata/spatial">
+
+  <PhotoLayer>
+    <l:Name>hankos_vacation</l:Name>
+    <d:Title>Where the hell was Hanko</d:Title>
+    <s:CRS>EPSG:31466 EPSG:4326</s:CRS>
+    <Directory>/data/pics</Directory>
+  </PhotoLayer>
+
+</PhotoLayers>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://www.occamlabs.de/deegree/layers/photo" xmlns:f="http://www.occamlabs.de/deegree/layers/photo"
+  elementFormDefault="qualified" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" jaxb:version="2.1"
+  xmlns:l="http://www.deegree.org/layers/base">
+
+  <annotation>
+    <appinfo>
+      <jaxb:schemaBindings>
+        <jaxb:package name="de.occamlabs.deegree.layer.photo.jaxb" />
+      </jaxb:schemaBindings>
+    </appinfo>
+  </annotation>
+
+  <import namespace="http://www.deegree.org/layers/base" schemaLocation="http://schemas.deegree.org/layers/base/3.2.0/base.xsd" />
+
+  <complexType name="PhotoLayerType">
+    <sequence>
+      <group ref="l:LayerInfo" />
+      <element name="Directory">
+        <complexType>
+          <simpleContent>
+            <extension base="string">
+              <attribute name="recursive" type="boolean" use="optional" default="true"></attribute>
+            </extension>
+          </simpleContent>
+        </complexType>
+      </element>
+      <element name="ImageSize" type="int" minOccurs="0" default="32" />
+    </sequence>
+  </complexType>
+
+  <element name="PhotoLayers">
+    <complexType>
+      <sequence>
+        <element name="PhotoLayer" type="f:PhotoLayerType" maxOccurs="unbounded" />
+      </sequence>
+      <attribute name="configVersion" type="f:ConfigVersionType" use="required" />
+    </complexType>
+  </element>
+
+  <simpleType name="ConfigVersionType">
+    <restriction base="string">
+      <enumeration value="3.2.0" />
+    </restriction>
+  </simpleType>
+
+</schema>
