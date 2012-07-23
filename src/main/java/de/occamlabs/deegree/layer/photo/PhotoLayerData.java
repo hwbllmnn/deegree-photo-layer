@@ -41,9 +41,19 @@
 
 package de.occamlabs.deegree.layer.photo;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import javax.imageio.ImageIO;
+
+import org.deegree.commons.utils.Triple;
 import org.deegree.feature.FeatureCollection;
+import org.deegree.geometry.primitive.Point;
 import org.deegree.layer.LayerData;
+import org.deegree.rendering.r2d.Renderer;
 import org.deegree.rendering.r2d.context.RenderContext;
+import org.deegree.style.styling.PointStyling;
 
 /**
  * <code>PhotoLayerData</code>
@@ -56,10 +66,30 @@ import org.deegree.rendering.r2d.context.RenderContext;
 
 public class PhotoLayerData implements LayerData {
 
+    private List<Triple<Point, File, Integer>> points;
+
+    private int size;
+
+    public PhotoLayerData( List<Triple<Point, File, Integer>> points, int size ) {
+        this.points = points;
+        this.size = size;
+    }
+
     @Override
     public void render( RenderContext context ) {
-        // TODO Auto-generated method stub
-        
+        Renderer renderer = context.getVectorRenderer();
+        PointStyling sty = new PointStyling();
+        sty.graphic.size = size;
+        for ( Triple<Point, File, Integer> p : points ) {
+            try {
+                sty.graphic.image = ImageIO.read( p.second );
+                sty.graphic.rotation = p.third;
+                renderer.render( sty, p.first );
+            } catch ( IOException e ) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
