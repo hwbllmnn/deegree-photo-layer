@@ -50,6 +50,7 @@ import java.util.Map;
 import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.config.ResourceManager;
+import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.xml.jaxb.JAXBUtils;
 import org.deegree.geometry.metadata.SpatialMetadata;
 import org.deegree.geometry.metadata.SpatialMetadataConverter;
@@ -121,12 +122,12 @@ public class PhotoLayerProvider implements LayerStoreProvider {
         SpatialMetadata smd = SpatialMetadataConverter.fromJaxb( cfg.getEnvelope(), cfg.getCRS() );
 
         LayerMetadata md = new LayerMetadata( cfg.getName(), desc, smd );
-        return new PhotoLayer( md, dirFile, h2File, recursive, size );
+        return new PhotoLayer( workspace, md, dirFile, h2File, recursive, size );
     }
 
     @Override
     public Class<? extends ResourceManager>[] getDependencies() {
-        return new Class[] {};
+        return new Class[] { ConnectionManager.class };
     }
 
     @Override

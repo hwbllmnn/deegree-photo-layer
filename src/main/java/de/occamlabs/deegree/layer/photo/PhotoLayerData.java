@@ -54,6 +54,8 @@ import org.deegree.layer.LayerData;
 import org.deegree.rendering.r2d.Renderer;
 import org.deegree.rendering.r2d.context.RenderContext;
 import org.deegree.style.styling.PointStyling;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <code>PhotoLayerData</code>
@@ -65,6 +67,8 @@ import org.deegree.style.styling.PointStyling;
  */
 
 public class PhotoLayerData implements LayerData {
+
+    private static final Logger LOG = LoggerFactory.getLogger( PhotoLayerData.class );
 
     private List<Triple<Point, File, Integer>> points;
 
@@ -86,8 +90,8 @@ public class PhotoLayerData implements LayerData {
                 sty.graphic.rotation = p.third;
                 renderer.render( sty, p.first );
             } catch ( IOException e ) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                LOG.debug( "Skipping image {}: {}", p.second, e.getLocalizedMessage() );
+                LOG.trace( "Stack trace:", e );
             }
         }
     }
