@@ -107,12 +107,19 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         PreparedStatement stmt = null;
         try {
             DatabaseMetaData md = conn.getMetaData();
-            rs = md.getTables( null, null, "photodirectoryindex", null );
+            rs = md.getTables( null, null, "PHOTODIRECTORYINDEX", null );
             if ( !rs.next() ) {
                 String sql = "create table photodirectoryindex (x double, y double, rotation integer, file varchar, timestamp bigint)";
                 stmt = conn.prepareStatement( sql );
                 stmt.executeUpdate();
                 stmt.close();
+                stmt = conn.prepareStatement( "create index x_index on photodirectoryindex (x)" );
+                stmt.executeUpdate();
+                stmt.close();
+                stmt = conn.prepareStatement( "create index y_index on photodirectoryindex (y)" );
+                stmt.executeUpdate();
+                stmt.close();
+                conn.commit();
             }
             rs.close();
         } catch ( SQLException e ) {
@@ -131,7 +138,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         ResultSet rs = null;
         PreparedStatement stmt = null;
         try {
-            stmt = conn.prepareStatement( "select count(1) from photodirectoryindex where file = ? and timestamp = ?" );
+            stmt = conn.prepareStatement( "select * from photodirectoryindex where file = ? and timestamp = ?" );
             stmt.setString( 1, file.toString() );
             stmt.setLong( 2, timestamp );
             rs = stmt.executeQuery();
@@ -176,6 +183,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             stmt.setString( 4, file.toString() );
             stmt.setLong( 5, timestamp );
             stmt.executeUpdate();
+            conn.commit();
         } catch ( Throwable e ) {
             LOG.warn( "Could not update index with file {}: {}", file, e.getLocalizedMessage() );
             LOG.trace( "Stack trace:", e );
@@ -198,6 +206,8 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         try {
             stmt = conn.prepareStatement( "delete from photodirectoryindex where file = ?" );
             stmt.executeUpdate();
+            stmt.close();
+            conn.commit();
         } catch ( Throwable e ) {
             LOG.warn( "Could not update index with file {}: {}", file, e.getLocalizedMessage() );
             LOG.trace( "Stack trace:", e );
@@ -217,14 +227,11 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
 
         try {
             envelope = new GeometryTransformer( CRSManager.getCRSRef( "CRS:84" ) ).transform( envelope );
-            System.out.println(envelope);
             stmt = conn.prepareStatement( "select x, y, rotation, file from photodirectoryindex where x >= ? and x <= ? and y >= ? and y <= ?" );
-            System.out.println(stmt);
             stmt.setDouble( 1, envelope.getMin().get0() );
             stmt.setDouble( 2, envelope.getMax().get0() );
             stmt.setDouble( 3, envelope.getMin().get1() );
             stmt.setDouble( 4, envelope.getMax().get1() );
-            System.out.println(stmt);
             rs = stmt.executeQuery();
 
             while ( rs.next() ) {
@@ -241,7 +248,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         } finally {
             JDBCUtils.close( rs, stmt, conn, LOG );
         }
-        System.out.println( "found " + list.size() + " files" );
+        LOG.debug( "Found {} images.", list.size() );
         return list;
     }
 
