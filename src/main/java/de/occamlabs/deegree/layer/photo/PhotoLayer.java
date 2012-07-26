@@ -92,7 +92,8 @@ public class PhotoLayer implements Layer {
     @Override
     public LayerData infoQuery( LayerQuery query, List<String> headers )
                             throws OWSException {
-        List<Triple<Point, File, Integer>> points = index.query( query.calcClickBox( size / 2 ) );
+        List<Triple<Point, File, Integer>> points = index.query( query.calcClickBox( (int) Math.round( Math.sqrt( size
+                                                                                                                  * size ) ) ) );
         return new PhotoLayerData( points, size );
     }
 
