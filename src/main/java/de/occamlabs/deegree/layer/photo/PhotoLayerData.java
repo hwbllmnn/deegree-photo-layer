@@ -49,6 +49,7 @@ import javax.imageio.ImageIO;
 
 import org.deegree.commons.utils.Triple;
 import org.deegree.feature.FeatureCollection;
+import org.deegree.feature.GenericFeatureCollection;
 import org.deegree.geometry.primitive.Point;
 import org.deegree.layer.LayerData;
 import org.deegree.rendering.r2d.Renderer;
@@ -98,8 +99,11 @@ public class PhotoLayerData implements LayerData {
 
     @Override
     public FeatureCollection info() {
-        // TODO Auto-generated method stub
-        return null;
+        GenericFeatureCollection col = new GenericFeatureCollection();
+        for(Triple<Point, File, Integer> p : points){
+            // TODO create feature type, features, how to embed the URLs?
+        }
+        return col;
     }
 
 }

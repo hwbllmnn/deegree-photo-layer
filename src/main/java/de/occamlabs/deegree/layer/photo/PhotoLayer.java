@@ -52,8 +52,6 @@ import org.deegree.layer.LayerData;
 import org.deegree.layer.LayerQuery;
 import org.deegree.layer.metadata.LayerMetadata;
 import org.deegree.protocol.ows.exception.OWSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * <code>PhotoLayer</code>
@@ -65,8 +63,6 @@ import org.slf4j.LoggerFactory;
  */
 
 public class PhotoLayer implements Layer {
-
-    private static final Logger LOG = LoggerFactory.getLogger( PhotoLayer.class );
 
     private LayerMetadata metadata;
 
@@ -96,8 +92,8 @@ public class PhotoLayer implements Layer {
     @Override
     public LayerData infoQuery( LayerQuery query, List<String> headers )
                             throws OWSException {
-        // TODO Auto-generated method stub
-        return null;
+        List<Triple<Point, File, Integer>> points = index.query( query.calcClickBox( size / 2 ) );
+        return new PhotoLayerData( points, size );
     }
 
 }
