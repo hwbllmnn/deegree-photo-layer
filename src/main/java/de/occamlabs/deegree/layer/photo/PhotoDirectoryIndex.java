@@ -68,6 +68,7 @@ import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Envelope;
 import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.GeometryTransformer;
+import org.deegree.geometry.metadata.SpatialMetadata;
 import org.deegree.geometry.primitive.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,9 +90,15 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
 
     private String connid;
 
-    public PhotoDirectoryIndex( DeegreeWorkspace workspace, File directory, File index, boolean recursive ) {
+    private SpatialMetadata metadata;
+
+    private FileAlterationMonitor monitor;
+
+    public PhotoDirectoryIndex( DeegreeWorkspace workspace, File directory, File index, boolean recursive,
+                                SpatialMetadata metadata ) {
         this.workspace = workspace;
-        FileAlterationMonitor monitor = new FileAlterationMonitor( directory, 1000, recursive, null );
+        this.metadata = metadata;
+        monitor = new FileAlterationMonitor( directory, 1000, recursive, null );
         monitor.registerListener( this );
 
         ConnectionManager.addConnection( connid = UUID.randomUUID().toString(), "jdbc:h2:" + index.toString(), "SA",
@@ -120,6 +127,23 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
                 stmt.executeUpdate();
                 stmt.close();
                 conn.commit();
+            } else {
+                rs.close();
+                stmt = conn.prepareStatement( "select x, y from photodirectoryindex" );
+                rs = stmt.executeQuery();
+                Envelope env = null;
+                GeometryFactory fac = new GeometryFactory();
+                while ( rs.next() ) {
+                    double x = rs.getDouble( 1 );
+                    double y = rs.getDouble( 2 );
+                    Envelope e = fac.createEnvelope( x, y, x, y, CRSManager.getCRSRef( "CRS:84" ) );
+                    if ( env == null ) {
+                        env = e;
+                    } else {
+                        env = env.merge( e );
+                    }
+                }
+                metadata.setEnvelope( env );
             }
             rs.close();
         } catch ( SQLException e ) {
@@ -176,6 +200,13 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
 
             double x = info.getLongitudeAsDegreesEast();
             double y = info.getLatitudeAsDegreesNorth();
+
+            Envelope env = new GeometryFactory().createEnvelope( x, y, x, y, CRSManager.getCRSRef( "CRS:84" ) );
+            if ( metadata.getEnvelope() == null ) {
+                metadata.setEnvelope( env );
+            }
+            metadata.setEnvelope( env.merge( metadata.getEnvelope() ) );
+
             stmt = conn.prepareStatement( "insert into photodirectoryindex values (?,?,?,?,?)" );
             stmt.setDouble( 1, x );
             stmt.setDouble( 2, y );

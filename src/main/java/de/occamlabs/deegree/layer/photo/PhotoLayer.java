@@ -73,7 +73,7 @@ public class PhotoLayer implements Layer {
     public PhotoLayer( DeegreeWorkspace workspace, LayerMetadata metadata, File dir, File index, boolean recursive,
                        int size ) {
         this.metadata = metadata;
-        this.index = new PhotoDirectoryIndex( workspace, dir, index, recursive );
+        this.index = new PhotoDirectoryIndex( workspace, dir, index, recursive, getMetadata().getSpatialMetadata() );
         this.size = size;
     }
 
