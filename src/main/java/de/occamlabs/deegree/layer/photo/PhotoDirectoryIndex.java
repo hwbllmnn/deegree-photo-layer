@@ -156,6 +156,9 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
 
     @Override
     public void newFile( File file ) {
+        if ( workspace == null ) {
+            return;
+        }
         long timestamp = file.lastModified();
         ConnectionManager mgr = workspace.getSubsystemManager( ConnectionManager.class );
         Connection conn = mgr.get( connid );
@@ -231,6 +234,9 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
 
     @Override
     public void fileDeleted( File file ) {
+        if ( workspace == null ) {
+            return;
+        }
         ConnectionManager mgr = workspace.getSubsystemManager( ConnectionManager.class );
         Connection conn = mgr.get( connid );
         PreparedStatement stmt = null;
