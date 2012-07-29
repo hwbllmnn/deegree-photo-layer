@@ -4,6 +4,7 @@
   <artifactId>deegree-photo-layer</artifactId>
   <packaging>jar</packaging>
   <name>deegree-photo-layer</name>
+  <version>1.0-SNAPSHOT</version>
   <description>Layers implementation for layers created from georeferenced photos</description>
 
   <properties>
@@ -18,8 +19,8 @@
 
   <repositories>
     <repository>
-      <id>deegree-repo</id>
-      <url>http://artefacts.deegree.org/repo</url>
+      <id>occamlabs-repo</id>
+      <url>https://jenkins.occamlabs.de/nexus/content/groups/repo</url>
       <releases>
         <updatePolicy>never</updatePolicy>
       </releases>
@@ -28,6 +29,17 @@
       </snapshots>
     </repository>
   </repositories>
+
+  <distributionManagement>
+    <repository>
+      <id>occamlabs-releases</id>
+      <url>https://jenkins.occamlabs.de/nexus/content/repositories/releases</url>
+    </repository>
+    <snapshotRepository>
+      <id>occamlabs-snapshots</id>
+      <url>https://jenkins.occamlabs.de/nexus/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
 
   <build>
     <plugins>
@@ -38,7 +50,7 @@
           <dependency>
             <groupId>org.deegree</groupId>
             <artifactId>deegree-core-layer</artifactId>
-            <version>${project.version}</version>
+            <version>3.2-pre10-SNAPSHOT</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -49,7 +61,7 @@
     <dependency>
       <groupId>org.deegree</groupId>
       <artifactId>deegree-core-layer</artifactId>
-      <version>${project.version}</version>
+      <version>3.2-pre10-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
