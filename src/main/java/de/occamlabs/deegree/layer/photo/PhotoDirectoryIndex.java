@@ -169,6 +169,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         if ( file.getName().startsWith( ".h2" ) || file.getParentFile().getName().startsWith( ".h2" ) ) {
             return;
         }
+
         long timestamp = file.lastModified();
         ConnectionManager mgr = workspace.getSubsystemManager( ConnectionManager.class );
         Connection conn = mgr.get( connid );
@@ -219,6 +220,8 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
                 metadata.setEnvelope( env );
             }
             metadata.setEnvelope( env.merge( metadata.getEnvelope() ) );
+
+            LOG.debug( "Found proper metadata for file {}.", file );
 
             BufferedImage img = ImageIO.read( file );
             float fac = 256f / ( ( img.getWidth() > img.getHeight() ) ? img.getWidth() : img.getHeight() );
