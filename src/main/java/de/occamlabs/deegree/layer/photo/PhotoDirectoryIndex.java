@@ -357,4 +357,9 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         return list;
     }
 
+    public void destroy() {
+        monitor.stop();
+        monitor.removeListener( this );
+    }
+
 }

@@ -49,7 +49,7 @@ import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.Triple;
 import org.deegree.geometry.primitive.Point;
-import org.deegree.layer.Layer;
+import org.deegree.layer.AbstractLayer;
 import org.deegree.layer.LayerData;
 import org.deegree.layer.LayerQuery;
 import org.deegree.layer.metadata.LayerMetadata;
@@ -64,9 +64,7 @@ import org.deegree.protocol.ows.exception.OWSException;
  * @version $Revision: 31882 $, $Date: 2011-09-15 02:05:04 +0200 (Thu, 15 Sep 2011) $
  */
 
-public class PhotoLayer implements Layer {
-
-    private LayerMetadata metadata;
+public class PhotoLayer extends AbstractLayer {
 
     private int size;
 
@@ -74,14 +72,9 @@ public class PhotoLayer implements Layer {
 
     public PhotoLayer( DeegreeWorkspace workspace, LayerMetadata metadata, File dir, File index, boolean recursive,
                        int size ) {
-        this.metadata = metadata;
+        super( metadata );
         this.index = new PhotoDirectoryIndex( workspace, dir, index, recursive, getMetadata().getSpatialMetadata() );
         this.size = size;
-    }
-
-    @Override
-    public LayerMetadata getMetadata() {
-        return metadata;
     }
 
     @Override
@@ -98,4 +91,9 @@ public class PhotoLayer implements Layer {
         return new PhotoLayerData( points );
     }
 
+    @Override
+    public void destroy(){
+        index.destroy();
+    }
+    
 }
