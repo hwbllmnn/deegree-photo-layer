@@ -41,8 +41,12 @@
 
 package de.occamlabs.deegree.layer.photo;
 
+import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
 import static org.apache.sanselan.formats.tiff.constants.TiffTagConstants.TIFF_TAG_ORIENTATION;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -53,6 +57,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import javax.imageio.ImageIO;
+
 import org.apache.sanselan.Sanselan;
 import org.apache.sanselan.common.IImageMetadata;
 import org.apache.sanselan.formats.jpeg.JpegImageMetadata;
@@ -61,6 +67,7 @@ import org.apache.sanselan.formats.tiff.TiffImageMetadata.GPSInfo;
 import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.jdbc.ConnectionManager;
 import org.deegree.commons.utils.JDBCUtils;
+import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.Triple;
 import org.deegree.commons.utils.fam.FileAlterationListener;
 import org.deegree.commons.utils.fam.FileAlterationMonitor;
@@ -116,7 +123,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             DatabaseMetaData md = conn.getMetaData();
             rs = md.getTables( null, null, "PHOTODIRECTORYINDEX", null );
             if ( !rs.next() ) {
-                String sql = "create table photodirectoryindex (x double, y double, rotation integer, file varchar, timestamp bigint)";
+                String sql = "create table photodirectoryindex (x double, y double, rotation integer, file varchar, timestamp bigint, thumbnail blob)";
                 stmt = conn.prepareStatement( sql );
                 stmt.executeUpdate();
                 stmt.close();
@@ -157,6 +164,9 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
     @Override
     public void newFile( File file ) {
         if ( workspace == null ) {
+            return;
+        }
+        if ( file.getName().startsWith( ".h2" ) || file.getParentFile().getName().startsWith( ".h2" ) ) {
             return;
         }
         long timestamp = file.lastModified();
@@ -210,13 +220,29 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             }
             metadata.setEnvelope( env.merge( metadata.getEnvelope() ) );
 
-            stmt = conn.prepareStatement( "insert into photodirectoryindex values (?,?,?,?,?)" );
+            BufferedImage img = ImageIO.read( file );
+            float fac = 256f / ( ( img.getWidth() > img.getHeight() ) ? img.getWidth() : img.getHeight() );
+            // AffineTransform tf = AffineTransform.getScaleInstance(fac, fac );
+
+            BufferedImage img2 = new BufferedImage( Math.round( img.getWidth() * fac ), Math.round( img.getHeight()
+                                                                                                    * fac ),
+                                                    TYPE_INT_ARGB );
+            Graphics2D g = img2.createGraphics();
+            g.drawImage( img, 0, 0, img2.getWidth(), img2.getHeight(), null );
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ImageIO.write( img2, "png", bos );
+            bos.close();
+
+            byte[] bs = bos.toByteArray();
+            stmt = conn.prepareStatement( "insert into photodirectoryindex values (?,?,?,?,?,?)" );
             stmt.setDouble( 1, x );
             stmt.setDouble( 2, y );
             stmt.setInt( 3, rotation );
             stmt.setString( 4, file.toString() );
             stmt.setLong( 5, timestamp );
-            stmt.executeUpdate();
+            stmt.setBytes( 6, bs );
+
             conn.commit();
         } catch ( Throwable e ) {
             LOG.warn( "Could not update index with file {}: {}", file, e.getLocalizedMessage() );
@@ -237,11 +263,15 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         if ( workspace == null ) {
             return;
         }
+        if ( file.getName().startsWith( ".h2" ) || file.getParentFile().getName().startsWith( ".h2" ) ) {
+            return;
+        }
         ConnectionManager mgr = workspace.getSubsystemManager( ConnectionManager.class );
         Connection conn = mgr.get( connid );
         PreparedStatement stmt = null;
         try {
             stmt = conn.prepareStatement( "delete from photodirectoryindex where file = ?" );
+            stmt.setString( 1, file.toURI().toURL().toExternalForm() );
             stmt.executeUpdate();
             stmt.close();
             conn.commit();
@@ -253,8 +283,8 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         }
     }
 
-    public List<Triple<Point, File, Integer>> query( Envelope envelope ) {
-        List<Triple<Point, File, Integer>> list = new ArrayList<Triple<Point, File, Integer>>();
+    public List<Triple<Point, BufferedImage, Integer>> query( Envelope envelope ) {
+        List<Triple<Point, BufferedImage, Integer>> list = new ArrayList<Triple<Point, BufferedImage, Integer>>();
         GeometryFactory fac = new GeometryFactory();
 
         ConnectionManager mgr = workspace.getSubsystemManager( ConnectionManager.class );
@@ -264,7 +294,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
 
         try {
             envelope = new GeometryTransformer( CRSManager.getCRSRef( "CRS:84" ) ).transform( envelope );
-            stmt = conn.prepareStatement( "select x, y, rotation, file from photodirectoryindex where x >= ? and x <= ? and y >= ? and y <= ?" );
+            stmt = conn.prepareStatement( "select x, y, rotation, thumbnail from photodirectoryindex where x >= ? and x <= ? and y >= ? and y <= ?" );
             stmt.setDouble( 1, envelope.getMin().get0() );
             stmt.setDouble( 2, envelope.getMax().get0() );
             stmt.setDouble( 3, envelope.getMin().get1() );
@@ -275,9 +305,44 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
                 double x = rs.getDouble( "x" );
                 double y = rs.getDouble( "y" );
                 int rotation = rs.getInt( "rotation" );
-                String file = rs.getString( "file" );
+                BufferedImage img = ImageIO.read( rs.getBinaryStream( "thumbnail" ) );
                 Point p = fac.createPoint( null, x, y, CRSManager.getCRSRef( "CRS:84" ) );
-                list.add( new Triple<Point, File, Integer>( p, new File( file ), rotation ) );
+                list.add( new Triple<Point, BufferedImage, Integer>( p, img, rotation ) );
+            }
+        } catch ( Throwable e ) {
+            LOG.warn( "Could not query index: {}", e.getLocalizedMessage() );
+            LOG.trace( "Stack trace:", e );
+        } finally {
+            JDBCUtils.close( rs, stmt, conn, LOG );
+        }
+        LOG.debug( "Found {} images.", list.size() );
+        return list;
+    }
+
+    public List<Pair<Point, File>> queryInfo( Envelope envelope ) {
+        List<Pair<Point, File>> list = new ArrayList<Pair<Point, File>>();
+        GeometryFactory fac = new GeometryFactory();
+
+        ConnectionManager mgr = workspace.getSubsystemManager( ConnectionManager.class );
+        Connection conn = mgr.get( connid );
+        ResultSet rs = null;
+        PreparedStatement stmt = null;
+
+        try {
+            envelope = new GeometryTransformer( CRSManager.getCRSRef( "CRS:84" ) ).transform( envelope );
+            stmt = conn.prepareStatement( "select x, y, file from photodirectoryindex where x >= ? and x <= ? and y >= ? and y <= ?" );
+            stmt.setDouble( 1, envelope.getMin().get0() );
+            stmt.setDouble( 2, envelope.getMax().get0() );
+            stmt.setDouble( 3, envelope.getMin().get1() );
+            stmt.setDouble( 4, envelope.getMax().get1() );
+            rs = stmt.executeQuery();
+
+            while ( rs.next() ) {
+                double x = rs.getDouble( "x" );
+                double y = rs.getDouble( "y" );
+                Point p = fac.createPoint( null, x, y, CRSManager.getCRSRef( "CRS:84" ) );
+                File file = new File( rs.getString( "file" ) );
+                list.add( new Pair<Point, File>( p, file ) );
             }
         } catch ( Throwable e ) {
             LOG.warn( "Could not query index: {}", e.getLocalizedMessage() );

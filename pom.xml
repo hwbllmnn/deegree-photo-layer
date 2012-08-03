@@ -8,9 +8,10 @@
   <version>1.0-SNAPSHOT</version>
   <description>Layers implementation for layers created from georeferenced photos</description>
 
-  <properties>
-    <deegree.module.status>check</deegree.module.status>
-  </properties>
+  <scm>
+    <connection>scm:git:git://github.com/hwbllmnn/deegree-photo-layer.git</connection>
+    <developerConnection>scm:git:git@github.com:hwbllmnn/deegree-photo-layer.git</developerConnection>
+  </scm>
 
   <parent>
     <groupId>org.deegree</groupId>
@@ -76,4 +77,3 @@
   </dependencies>
 
 </project>
-

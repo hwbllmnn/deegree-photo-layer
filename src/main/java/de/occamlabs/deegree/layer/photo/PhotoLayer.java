@@ -41,10 +41,12 @@
 
 package de.occamlabs.deegree.layer.photo;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 
 import org.deegree.commons.config.DeegreeWorkspace;
+import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.Triple;
 import org.deegree.geometry.primitive.Point;
 import org.deegree.layer.Layer;
@@ -85,16 +87,15 @@ public class PhotoLayer implements Layer {
     @Override
     public LayerData mapQuery( LayerQuery query, List<String> headers )
                             throws OWSException {
-        List<Triple<Point, File, Integer>> points = index.query( query.getEnvelope() );
+        List<Triple<Point, BufferedImage, Integer>> points = index.query( query.getEnvelope() );
         return new PhotoLayerData( points, size );
     }
 
     @Override
     public LayerData infoQuery( LayerQuery query, List<String> headers )
                             throws OWSException {
-        List<Triple<Point, File, Integer>> points = index.query( query.calcClickBox( (int) Math.round( Math.sqrt( size
-                                                                                                                  * size ) ) ) );
-        return new PhotoLayerData( points, size );
+        List<Pair<Point, File>> points = index.queryInfo( query.calcClickBox( (int) Math.round( Math.sqrt( size * size ) ) ) );
+        return new PhotoLayerData( points );
     }
 
 }

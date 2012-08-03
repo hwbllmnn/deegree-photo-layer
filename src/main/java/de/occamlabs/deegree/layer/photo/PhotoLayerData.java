@@ -41,18 +41,18 @@
 
 package de.occamlabs.deegree.layer.photo;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.imageio.ImageIO;
 import javax.xml.namespace.QName;
 
 import org.deegree.commons.tom.gml.property.Property;
 import org.deegree.commons.tom.gml.property.PropertyType;
 import org.deegree.commons.tom.primitive.BaseType;
+import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.Triple;
 import org.deegree.feature.FeatureCollection;
 import org.deegree.feature.GenericFeatureCollection;
@@ -81,7 +81,9 @@ public class PhotoLayerData implements LayerData {
 
     private static final Logger LOG = LoggerFactory.getLogger( PhotoLayerData.class );
 
-    private List<Triple<Point, File, Integer>> points;
+    private List<Triple<Point, BufferedImage, Integer>> points;
+
+    private List<Pair<Point, File>> fiPoints;
 
     private int size;
 
@@ -97,9 +99,13 @@ public class PhotoLayerData implements LayerData {
         featureType = new GenericFeatureType( name, props, false );
     }
 
-    public PhotoLayerData( List<Triple<Point, File, Integer>> points, int size ) {
+    public PhotoLayerData( List<Triple<Point, BufferedImage, Integer>> points, int size ) {
         this.points = points;
         this.size = size;
+    }
+
+    public PhotoLayerData( List<Pair<Point, File>> points ) {
+        this.fiPoints = points;
     }
 
     @Override
@@ -107,26 +113,21 @@ public class PhotoLayerData implements LayerData {
         Renderer renderer = context.getVectorRenderer();
         PointStyling sty = new PointStyling();
         sty.graphic.size = size;
-        for ( Triple<Point, File, Integer> p : points ) {
-            try {
-                sty.graphic.image = ImageIO.read( p.second );
-                sty.graphic.rotation = p.third;
-                renderer.render( sty, p.first );
-            } catch ( IOException e ) {
-                LOG.debug( "Skipping image {}: {}", p.second, e.getLocalizedMessage() );
-                LOG.trace( "Stack trace:", e );
-            }
+        for ( Triple<Point, BufferedImage, Integer> p : points ) {
+            sty.graphic.image = p.second;
+            sty.graphic.rotation = p.third;
+            renderer.render( sty, p.first );
         }
     }
 
     @Override
     public FeatureCollection info() {
         GenericFeatureCollection col = new GenericFeatureCollection();
-        for ( Triple<Point, File, Integer> p : points ) {
+        for ( Pair<Point, File> p : fiPoints ) {
             List<Property> props = new ArrayList<Property>();
             try {
                 props.add( new SimpleProperty( linkType, p.second.toURI().toURL().toExternalForm() ) );
-                col.add( featureType.newFeature( "ID_" + p.second.toString(), props, null ) );
+                col.add( featureType.newFeature( "ID_" + p.second.toURI().toURL().toExternalForm(), props, null ) );
             } catch ( MalformedURLException e ) {
                 LOG.error( "Creating file url failed?: {}", e.getLocalizedMessage() );
                 LOG.trace( "Stack trace:", e );
