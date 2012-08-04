@@ -166,7 +166,8 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         if ( workspace == null ) {
             return;
         }
-        if ( file.getName().startsWith( ".h2" ) || file.getParentFile().getName().startsWith( ".h2" ) ) {
+        if ( file.getName().startsWith( ".h2" ) || file.getParentFile().getName().startsWith( ".h2" )
+             || file.isDirectory() ) {
             return;
         }
 
