@@ -246,6 +246,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             stmt.setString( 4, file.toString() );
             stmt.setLong( 5, timestamp );
             stmt.setBytes( 6, bs );
+            stmt.executeUpdate();
 
             conn.commit();
         } catch ( Throwable e ) {
@@ -303,6 +304,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             stmt.setDouble( 2, envelope.getMax().get0() );
             stmt.setDouble( 3, envelope.getMin().get1() );
             stmt.setDouble( 4, envelope.getMax().get1() );
+            LOG.debug( "Selecting images: {}", stmt );
             rs = stmt.executeQuery();
 
             while ( rs.next() ) {
