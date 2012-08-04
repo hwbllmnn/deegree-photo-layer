@@ -75,8 +75,8 @@ import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Envelope;
 import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.GeometryTransformer;
-import org.deegree.geometry.metadata.SpatialMetadata;
 import org.deegree.geometry.primitive.Point;
+import org.deegree.layer.metadata.LayerMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,12 +97,12 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
 
     private String connid;
 
-    private SpatialMetadata metadata;
+    private LayerMetadata metadata;
 
     private FileAlterationMonitor monitor;
 
     public PhotoDirectoryIndex( DeegreeWorkspace workspace, File directory, File index, boolean recursive,
-                                SpatialMetadata metadata ) {
+                                LayerMetadata metadata ) {
         this.workspace = workspace;
         this.metadata = metadata;
         monitor = new FileAlterationMonitor( directory, 1000, recursive, null );
@@ -159,7 +159,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             rs.next();
             Envelope env = fac.createEnvelope( rs.getDouble( 1 ), rs.getDouble( 2 ), rs.getDouble( 3 ),
                                                rs.getDouble( 4 ), CRSManager.getCRSRef( "CRS:84" ) );
-            metadata.setEnvelope( env );
+            metadata.getSpatialMetadata().setEnvelope( env );
         } catch ( SQLException e ) {
             LOG.error( "Could not update envelope from photo directory index: {}", e.getLocalizedMessage() );
             LOG.trace( "Stack trace:", e );
