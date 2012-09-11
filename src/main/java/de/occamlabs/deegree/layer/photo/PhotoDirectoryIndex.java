@@ -75,8 +75,8 @@ import org.deegree.cs.persistence.CRSManager;
 import org.deegree.geometry.Envelope;
 import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.GeometryTransformer;
-import org.deegree.geometry.metadata.SpatialMetadata;
 import org.deegree.geometry.primitive.Point;
+import org.deegree.layer.metadata.LayerMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,12 +97,12 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
 
     private String connid;
 
-    private SpatialMetadata metadata;
+    private LayerMetadata metadata;
 
     private FileAlterationMonitor monitor;
 
     public PhotoDirectoryIndex( DeegreeWorkspace workspace, File directory, File index, boolean recursive,
-                                SpatialMetadata metadata ) {
+                                LayerMetadata metadata ) {
         this.workspace = workspace;
         this.metadata = metadata;
         monitor = new FileAlterationMonitor( directory, 1000, recursive, null );
@@ -136,25 +136,32 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
                 conn.commit();
             } else {
                 rs.close();
-                stmt = conn.prepareStatement( "select x, y from photodirectoryindex" );
-                rs = stmt.executeQuery();
-                Envelope env = null;
-                GeometryFactory fac = new GeometryFactory();
-                while ( rs.next() ) {
-                    double x = rs.getDouble( 1 );
-                    double y = rs.getDouble( 2 );
-                    Envelope e = fac.createEnvelope( x, y, x, y, CRSManager.getCRSRef( "CRS:84" ) );
-                    if ( env == null ) {
-                        env = e;
-                    } else {
-                        env = env.merge( e );
-                    }
-                }
-                metadata.setEnvelope( env );
+                recalcEnvelope();
             }
             rs.close();
         } catch ( SQLException e ) {
             LOG.error( "Could not create photo directory index: {}", e.getLocalizedMessage() );
+            LOG.trace( "Stack trace:", e );
+        } finally {
+            JDBCUtils.close( rs, stmt, conn, LOG );
+        }
+    }
+
+    public synchronized void recalcEnvelope() {
+        ConnectionManager mgr = workspace.getSubsystemManager( ConnectionManager.class );
+        Connection conn = mgr.get( connid );
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        try {
+            stmt = conn.prepareStatement( "select min(x), min(y), max(x), max(y) from photodirectoryindex" );
+            rs = stmt.executeQuery();
+            GeometryFactory fac = new GeometryFactory();
+            rs.next();
+            Envelope env = fac.createEnvelope( rs.getDouble( 1 ), rs.getDouble( 2 ), rs.getDouble( 3 ),
+                                               rs.getDouble( 4 ), CRSManager.getCRSRef( "CRS:84" ) );
+            metadata.getSpatialMetadata().setEnvelope( env );
+        } catch ( SQLException e ) {
+            LOG.error( "Could not update envelope from photo directory index: {}", e.getLocalizedMessage() );
             LOG.trace( "Stack trace:", e );
         } finally {
             JDBCUtils.close( rs, stmt, conn, LOG );
@@ -166,7 +173,8 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         if ( workspace == null ) {
             return;
         }
-        if ( file.getName().startsWith( ".h2" ) || file.getParentFile().getName().startsWith( ".h2" ) ) {
+        if ( file.getName().startsWith( ".h2" ) || file.getParentFile().getName().startsWith( ".h2" )
+             || file.isDirectory() ) {
             return;
         }
 
@@ -215,17 +223,10 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             double x = info.getLongitudeAsDegreesEast();
             double y = info.getLatitudeAsDegreesNorth();
 
-            Envelope env = new GeometryFactory().createEnvelope( x, y, x, y, CRSManager.getCRSRef( "CRS:84" ) );
-            if ( metadata.getEnvelope() == null ) {
-                metadata.setEnvelope( env );
-            }
-            metadata.setEnvelope( env.merge( metadata.getEnvelope() ) );
-
             LOG.debug( "Found proper metadata for file {}.", file );
 
             BufferedImage img = ImageIO.read( file );
             float fac = 256f / ( ( img.getWidth() > img.getHeight() ) ? img.getWidth() : img.getHeight() );
-            // AffineTransform tf = AffineTransform.getScaleInstance(fac, fac );
 
             BufferedImage img2 = new BufferedImage( Math.round( img.getWidth() * fac ), Math.round( img.getHeight()
                                                                                                     * fac ),
@@ -245,6 +246,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             stmt.setString( 4, file.toString() );
             stmt.setLong( 5, timestamp );
             stmt.setBytes( 6, bs );
+            stmt.executeUpdate();
 
             conn.commit();
         } catch ( Throwable e ) {
@@ -253,6 +255,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         } finally {
             JDBCUtils.close( rs, stmt, conn, LOG );
         }
+        recalcEnvelope();
     }
 
     @Override
@@ -302,6 +305,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             stmt.setDouble( 2, envelope.getMax().get0() );
             stmt.setDouble( 3, envelope.getMin().get1() );
             stmt.setDouble( 4, envelope.getMax().get1() );
+            LOG.debug( "Selecting images: {}", stmt );
             rs = stmt.executeQuery();
 
             while ( rs.next() ) {

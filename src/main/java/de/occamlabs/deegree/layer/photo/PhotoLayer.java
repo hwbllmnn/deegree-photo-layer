@@ -48,6 +48,8 @@ import java.util.List;
 import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.Triple;
+import org.deegree.cs.persistence.CRSManager;
+import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.primitive.Point;
 import org.deegree.layer.AbstractLayer;
 import org.deegree.layer.LayerData;
@@ -73,7 +75,7 @@ public class PhotoLayer extends AbstractLayer {
     public PhotoLayer( DeegreeWorkspace workspace, LayerMetadata metadata, File dir, File index, boolean recursive,
                        int size ) {
         super( metadata );
-        this.index = new PhotoDirectoryIndex( workspace, dir, index, recursive, getMetadata().getSpatialMetadata() );
+        this.index = new PhotoDirectoryIndex( workspace, dir, index, recursive, getMetadata() );
         this.size = size;
     }
 
@@ -92,8 +94,8 @@ public class PhotoLayer extends AbstractLayer {
     }
 
     @Override
-    public void destroy(){
+    public void destroy() {
         index.destroy();
     }
-    
+
 }
