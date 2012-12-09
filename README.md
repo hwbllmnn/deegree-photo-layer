@@ -3,7 +3,7 @@ deegree-photo-layer
 
 Well Hanko, here it is:
 
-A layer implementation that displays georeferenced images in a deegree map.
+A layer implementation that displays georeferenced images in a deegree map. Make sure you use at least a deegree webservices 3.2-pre10.
 
 An example configuration looks like this:
 
