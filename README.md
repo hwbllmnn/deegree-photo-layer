@@ -25,6 +25,10 @@ An example configuration looks like this:
  
 ```
 
+Take note to include the Apache Sanselan library in your workspace:
+
+http://repo1.maven.org/maven2/org/apache/sanselan/sanselan/0.97-incubator/sanselan-0.97-incubator.jar
+
 As usual, you may include an arbitrary number of (in this case) PhotoLayer elements, each handles a single directory. You may leave off the recursive attribute, true is the default.
 
 I think most of the default layer stuff is configurable, probably only the standard metadata stuff (abstract and so on) is actually used by the implementation.
