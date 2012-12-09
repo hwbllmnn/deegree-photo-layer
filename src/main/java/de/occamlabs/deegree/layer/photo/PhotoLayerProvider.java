@@ -51,6 +51,8 @@ import org.deegree.commons.config.DeegreeWorkspace;
 import org.deegree.commons.config.ResourceInitException;
 import org.deegree.commons.config.ResourceManager;
 import org.deegree.commons.jdbc.ConnectionManager;
+import org.deegree.commons.ows.metadata.Description;
+import org.deegree.commons.ows.metadata.DescriptionConverter;
 import org.deegree.commons.xml.jaxb.JAXBUtils;
 import org.deegree.geometry.metadata.SpatialMetadata;
 import org.deegree.geometry.metadata.SpatialMetadataConverter;
@@ -59,8 +61,6 @@ import org.deegree.layer.metadata.LayerMetadata;
 import org.deegree.layer.persistence.LayerStore;
 import org.deegree.layer.persistence.LayerStoreProvider;
 import org.deegree.layer.persistence.MultipleLayerStore;
-import org.deegree.protocol.ows.metadata.Description;
-import org.deegree.protocol.ows.metadata.DescriptionConverter;
 
 import de.occamlabs.deegree.layer.photo.jaxb.PhotoLayerType;
 import de.occamlabs.deegree.layer.photo.jaxb.PhotoLayers;

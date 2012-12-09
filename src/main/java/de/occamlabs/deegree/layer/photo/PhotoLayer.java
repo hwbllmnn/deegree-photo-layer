@@ -46,16 +46,14 @@ import java.io.File;
 import java.util.List;
 
 import org.deegree.commons.config.DeegreeWorkspace;
+import org.deegree.commons.ows.exception.OWSException;
 import org.deegree.commons.utils.Pair;
 import org.deegree.commons.utils.Triple;
-import org.deegree.cs.persistence.CRSManager;
-import org.deegree.geometry.GeometryFactory;
 import org.deegree.geometry.primitive.Point;
 import org.deegree.layer.AbstractLayer;
 import org.deegree.layer.LayerData;
 import org.deegree.layer.LayerQuery;
 import org.deegree.layer.metadata.LayerMetadata;
-import org.deegree.protocol.ows.exception.OWSException;
 
 /**
  * <code>PhotoLayer</code>
