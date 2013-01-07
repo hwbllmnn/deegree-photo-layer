@@ -178,6 +178,8 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             return;
         }
 
+        LOG.debug( "Scanning file {}.", file );
+
         long timestamp = file.lastModified();
         ConnectionManager mgr = workspace.getSubsystemManager( ConnectionManager.class );
         Connection conn = mgr.get( connid );
@@ -189,6 +191,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             stmt.setLong( 2, timestamp );
             rs = stmt.executeQuery();
             if ( rs.next() ) {
+                LOG.debug( "File {} already in db.", file );
                 return;
             }
             rs.close();
@@ -201,6 +204,7 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
             }
             JpegImageMetadata tmd = (JpegImageMetadata) md;
             TiffField orientation = tmd.findEXIFValue( TIFF_TAG_ORIENTATION );
+
             int rotation = 0;
             if ( orientation != null ) {
                 int o = orientation.getIntValue();
@@ -272,6 +276,9 @@ public class PhotoDirectoryIndex implements FileAlterationListener {
         if ( file.getName().startsWith( ".h2" ) || file.getParentFile().getName().startsWith( ".h2" ) ) {
             return;
         }
+
+        LOG.debug( "Removing file {} from db.", file );
+
         ConnectionManager mgr = workspace.getSubsystemManager( ConnectionManager.class );
         Connection conn = mgr.get( connid );
         PreparedStatement stmt = null;
